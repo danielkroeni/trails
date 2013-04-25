@@ -29,8 +29,6 @@ trait Trails { self =>
 
   final implicit class SameStateSyntax[E,S,A](t1: Tr[E,S,S,A]) {
     def ? : Tr[E,S,S,Option[A]] = self.opt(t1)
-    def * : Tr[E,S,S,Stream[A]] = self.many(t1)
-    def + : Tr[E,S,S,Stream[A]] = self.many1(t1)
   }
 
   final case class ~[+A,+B](a: A, b: B) {
@@ -97,20 +95,6 @@ trait Trails { self =>
     */
   final def opt[E,S,A](tr: Tr[E,S,S,A]): Tr[E,S,S,Option[A]] =
     choice(success(None), map(tr)(Some(_)))
-
-  /** Returns a traverser which repeats the given traverser 0..* times.
-    * @param tr the traverser to be repeated
-    * @return a traverser which repeats the given traverserN
-    */
-  final def many[E,S,A](tr: Tr[E,S,S,A]): Tr[E,S,S,Stream[A]] =
-    choice(success(Stream()), many1(tr))
-
-  /** Returns a traverser which repeats the given traverser 1..* times.
-    * @param tr the traverser to be repeated
-    * @return a traverser which repeats the given traverser
-    */
-  final def many1[E,S,A](tr: Tr[E,S,S,A]): Tr[E,S,S,Stream[A]] =
-    for(a <- tr; as <- many(tr)) yield a #:: as
 }
 
 

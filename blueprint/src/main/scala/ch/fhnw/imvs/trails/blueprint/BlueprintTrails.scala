@@ -48,7 +48,7 @@ object BlueprintTrails extends TrailsPrimitives with Trails {
 
   private def ontoE(edgeName: String, dir: blueprints.Direction): Tr[Env,State[Node],State[Edge],Edge] =
     for {
-      State((head: Node) :: rest) <- getState[Env,State[Node]]
+      State((head: Node) :: rest,_,_) <- getState[Env,State[Node]]
       e <- streamToTraverser(head.getEdges(dir, edgeName).toStream)
       _ <- extendPath(e)
     } yield e
@@ -61,7 +61,7 @@ object BlueprintTrails extends TrailsPrimitives with Trails {
 
   private def ontoV(dir: blueprints.Direction): Tr[Env,State[Edge],State[Node],Node] =
     for {
-      State((head: Edge) :: rest) <- getState[Env,State[Edge]]
+      State((head: Edge) :: rest,_,_) <- getState[Env,State[Edge]]
       v = head.getVertex(dir)
       _ <- extendPath(v)
     } yield v

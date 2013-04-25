@@ -51,7 +51,7 @@ object Neo4jTrails extends TrailsPrimitives with Trails {
 
   private def ontoE(edgeName: String, dir: neo4j.Direction): Tr[Env,State[Node],State[Edge],Edge] =
     for {
-      State((head: Node) :: rest) <- getState[Env,State[Node]]
+      State((head: Node) :: rest, _, _) <- getState[Env,State[Node]]
       edges = head.getRelationships(neo4j.DynamicRelationshipType.withName(edgeName), dir)
       e <- streamToTraverser(edges.toStream)
       _ <- extendPath(e)
@@ -65,7 +65,7 @@ object Neo4jTrails extends TrailsPrimitives with Trails {
 
   private def ontoV(dir: neo4j.Direction): Tr[Env,State[Edge],State[Node],Node] =
     for {
-      State((head: Edge) :: rest) <- getState[Env,State[Edge]]
+      State((head: Edge) :: rest, _, _) <- getState[Env,State[Edge]]
       n = if(dir == OUTGOING) head.getStartNode else head.getEndNode
       _ <- extendPath(n)
     } yield n
