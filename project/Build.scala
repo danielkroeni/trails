@@ -8,7 +8,8 @@ object TrailsBuild extends Build with BuildSettings {
     name := "trails core",
     version := "0.1",
     libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest" % "1.9.1" % "test"
+      "org.scalatest" %% "scalatest" % "1.9.1" % "test",
+      "org.hsqldb" % "hsqldb" % "2.2.9"
     )
   ))
 

@@ -2,11 +2,11 @@ package ch.fhnw.imvs.trails.neo4j
 
 import org.neo4j.graphdb.Direction._
 import org.neo4j.tooling.GlobalGraphOperations
-import ch.fhnw.imvs.trails.{TrailsPrimitives, Trails}
+import ch.fhnw.imvs.trails.{Tables, Trails, TrailsPrimitives}
 import scala.collection.JavaConversions.iterableAsScalaIterable
 import org.neo4j.{graphdb => neo4j}
 
-object Neo4jTrails extends TrailsPrimitives with Trails {
+object Neo4jTrails extends Tables with TrailsPrimitives with Trails {
   type Env = neo4j.GraphDatabaseService
   type Elem = neo4j.PropertyContainer
   type Edge = neo4j.Relationship

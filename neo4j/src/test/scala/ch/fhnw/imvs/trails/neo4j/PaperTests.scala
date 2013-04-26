@@ -57,7 +57,7 @@ class PaperTests extends FunSuite with BeforeAndAfterAll {
 
   test("unhappy lovers") {
     val unhappyLovers = for {
-      l <- V.as("lover") ~ out("loves") ~> out("loves")
+      l <- AsSyntax[Nothing,Node,Node](V).as("lover") ~ out("loves") ~> out("loves")
       uhl <- label("lover") ^^ (_.head) if !uhl.contains(l)
     } yield uhl
 

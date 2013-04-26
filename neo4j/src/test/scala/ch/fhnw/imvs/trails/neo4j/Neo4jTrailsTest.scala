@@ -76,4 +76,26 @@ class Neo4jTrailsTest extends FunSuite {
       assert(paths.contains(List(v0, e0, v0, f0, v0, e0, v0, f1, v0)))
     }
   }
+
+  test("matches") {
+    withNeo4jGraph { graph =>
+      val v0 = graph.createNode()
+      val v1 = graph.createNode()
+      val v2 = graph.createNode()
+
+      val e0 = v0.createRelationshipTo(v1, withName("e"))
+      val e1 = v1.createRelationshipTo(v2, withName("e"))
+
+      val f0 = v1.createRelationshipTo(v1, withName("f"))
+      val g0 = v1.createRelationshipTo(v1, withName("g"))
+
+
+      val expr0 = V ~ matches(out("e") ~ out("f") ~ out("g") ~ out("e"))
+      val traces = Traverser.run(expr0,graph)
+      val paths = traces.map(t => t._1.reverse)
+
+      assert(paths.size === 1)
+      assert(paths.head === List(v0))
+    }
+  }
 }

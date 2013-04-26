@@ -94,8 +94,5 @@ trait Trails { self =>
     * @return a traverser which optionally follows the given traverser
     */
   final def opt[E,S,A](tr: Tr[E,S,S,A]): Tr[E,S,S,Option[A]] =
-    choice(success(None), map(tr)(Some(_)))
+    choice(success[E,S,Option[A]](None), map(tr)(Some(_)))
 }
-
-
-

@@ -1,10 +1,10 @@
 package ch.fhnw.imvs.trails.blueprint
 
 import scala.collection.JavaConversions._
-import ch.fhnw.imvs.trails.{TrailsPrimitives, Trails}
+import ch.fhnw.imvs.trails.{Tables, TrailsPrimitives, Trails}
 import com.tinkerpop.blueprints
 
-object BlueprintTrails extends TrailsPrimitives with Trails {
+object BlueprintTrails extends Tables with TrailsPrimitives with Trails {
   type Env = blueprints.Graph
   type Elem = blueprints.Element
   type Edge = blueprints.Edge
@@ -67,4 +67,14 @@ object BlueprintTrails extends TrailsPrimitives with Trails {
     } yield v
 
   def get[T](name: String)(e: Elem): T = e.getProperty[T](name)
+
+//  def selectProperty[A: ClassTag,I,O](tr: Tr[Env,State[I],State[O],_], propName: String): Tr[Env,State[I],State[O],A] = {
+//    name[A,I,O](propName, tr) { path =>
+//      path.head.getProperty[A](propName)
+//    }
+//  }
+//
+//  implicit class BlueprintTable[I,O](tr: Tr[Env,State[I],State[O],_]) {
+//    def ^[A: ClassTag](name: String): Tr[Env,State[I],State[O],A] = selectProperty[A,I,O](tr, name)
+//  }
 }

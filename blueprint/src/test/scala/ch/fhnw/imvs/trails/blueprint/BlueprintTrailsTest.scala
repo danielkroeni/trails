@@ -1,9 +1,9 @@
 package ch.fhnw.imvs.trails.blueprint
 
-import org.scalatest.FunSuite
-import BlueprintTrails._
-
+import ch.fhnw.imvs.trails.blueprint.BlueprintTrails._
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph
+import org.scalatest.FunSuite
+import java.sql.ResultSet
 
 class BlueprintTrailsTest extends FunSuite {
 
@@ -184,4 +184,156 @@ class BlueprintTrailsTest extends FunSuite {
       List(v0, e0, v0, f0, v0, e0, v0, f1, v0)
     ))
   }
+
+  test("matches") {
+    val graph = new TinkerGraph()
+    val v0 = graph.addVertex("v0")
+    val v1 = graph.addVertex("v1")
+    val v2 = graph.addVertex("v2")
+
+    val e0 = graph.addEdge("e0", v0, v1, "e")
+    val e1 = graph.addEdge("e1", v1, v2, "e")
+
+    val f0 = graph.addEdge("f0", v1, v1, "f")
+    val g0 = graph.addEdge("g0", v1, v1, "g")
+
+
+    val expr0 = V ~ matches(out("e") ~ out("f") ~ out("g") ~ out("e"))
+    val traces = Traverser.run(expr0, graph)
+    val paths = traces.map(t => t._1)
+
+    assert(paths.size === 1)
+    assert(paths.head === List(v0))
+  }
+
+  test("names") {
+    val graph = new TinkerGraph()
+    val v0 = graph.addVertex("v0")
+    val v1 = graph.addVertex("v1")
+    val v2 = graph.addVertex("v2")
+    val v3 = graph.addVertex("v3")
+
+    val e0 = graph.addEdge("e0", v0, v1, "e")
+    val e1 = graph.addEdge("e1", v1, v3, "e")
+    val e2 = graph.addEdge("e2", v0, v2, "e")
+    val e3 = graph.addEdge("e3", v2, v3, "e")
+
+    val f0 = graph.addEdge("f0", v1, v1, "f")
+
+    val expr0 = V("v0") ~> outE("e").as("es") ~ inV.as("vs") <~ out("e")
+    val result = Traverser.run(expr0, graph)
+
+    assert(result.size === 2)
+    assert(result.toSet === Set(
+      (List(v0,e0,v1,e1,v3),new ~(e0,v1)),
+      (List(v0,e2,v2,e3,v3),new ~(e2,v2))
+    ))
+  }
+
+  test("table") {
+    val graph = new TinkerGraph()
+    val v0 = graph.addVertex("v0")
+    val v1 = graph.addVertex("v1")
+    val v2 = graph.addVertex("v2")
+    val v3 = graph.addVertex("v3")
+    val v4 = graph.addVertex("v4")
+
+    graph.addEdge("e0", v0, v1, "e")
+    graph.addEdge("e1", v1, v3, "e")
+    graph.addEdge("e2", v0, v2, "e")
+    graph.addEdge("e3", v2, v3, "e")
+    graph.addEdge("e4", v2, v4, "e")
+
+    val expr0 = V("v0") ~ out("e").as("out(e)").+ ~ outE("e").as("outE(e)")
+    val result = Traverser.runAll(expr0, graph).map(_._1)
+
+    val table = ScalaTable(result)
+    println(table.pretty)
+  }
+
+//  test("sql table") {
+//    val graph = new TinkerGraph()
+//    val v0 = graph.addVertex("v0")
+//    val v1 = graph.addVertex("v1")
+//    val v2 = graph.addVertex("v2")
+//    val v3 = graph.addVertex("v3")
+//    val v4 = graph.addVertex("v4")
+//
+//    graph.addEdge("e0", v0, v1, "e")
+//    graph.addEdge("e1", v1, v3, "e")
+//    graph.addEdge("e2", v0, v2, "e")
+//    graph.addEdge("e3", v2, v3, "e")
+//    graph.addEdge("e4", v2, v4, "e")
+//
+//    val dbAction = from {
+//      V("v0") ~ out("e").as("col1").+ ~ outE("e").as("col2").asTable("yeah")
+//    }.extract[Unit] (" select col1, col2 from yeah order by col2 ") { (rs: ResultSet) => printResultSet(rs) }
+//
+//    dbAction(graph)
+//  }
+
+//  test("sql table properties") {
+//    val graph = new TinkerGraph()
+//    val v0 = graph.addVertex("v0")
+//    v0.setProperty("name", "Name0")
+//
+//    val v1 = graph.addVertex("v1")
+//    v1.setProperty("name", "Name1")
+//
+//    val v2 = graph.addVertex("v2")
+//    v2.setProperty("name", "Name2")
+//
+//    val v3 = graph.addVertex("v3")
+//    v3.setProperty("name", "Name3")
+//
+//    val v4 = graph.addVertex("v4")
+//    v4.setProperty("name", "Name4")
+//
+//    graph.addEdge("e0", v0, v1, "e").setProperty("weight", 0)
+//    graph.addEdge("e1", v0, v2, "e").setProperty("weight", 1)
+//    graph.addEdge("e2", v1, v3, "e").setProperty("weight", 2)
+//    graph.addEdge("e3", v2, v3, "e").setProperty("weight", 3)
+//
+//    val sqlQuery = from (
+//      (V("v0") ~ outE("e").^[Int]("weight") ~ inV.^[String]("name") ~ out("e")).asTable("t1"),
+//      (V("v1") ~ (inE("e") | outE("e")).^[Int]("weight")).asTable("t2")
+//    ).extract (
+//      """
+//      select lower(t1.name) as lowerName, t2.weight
+//        from t1, t2
+//       where t1.weight <> t2.weight
+//       order by t1.weight asc
+//      """
+//    ) ( printResultSet )
+//
+//    sqlQuery(graph) // execute at the end
+//  }
+
+    /*
+      select lower(t1.name) as lowerName, t1.weight, t2.ageA
+        from t1, t2
+       where t1.age != t2.age
+       order by t1.age
+ println("UNFOLD TABLE")
+
+    Vector(// table
+      Vector(List(a,b), List(c,d)) //row
+    )
+    =>
+
+    Vector(
+      Vector(List(a,b), c)
+      Vector(List(a,b), d)
+    )
+
+    =>
+
+    Vector(
+      Vector(a,c)
+      Vector(b,c)
+
+      Vector(a,d)
+      Vector(b,d)
+    )
+    */
 }
