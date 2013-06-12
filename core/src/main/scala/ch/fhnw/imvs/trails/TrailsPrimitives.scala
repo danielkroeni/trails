@@ -8,7 +8,7 @@ trait TrailsPrimitives { self: Trails =>
   type Id
   type Env
 
-  final case class State[+Head <: Elem](path: List[Elem], cycles: Set[List[Elem]], labels: Map[String,List[List[Elem]]])
+  final case class State[+Head <: Elem](path: List[Elem], cycles: Set[List[Elem]], labels: Map[String,List[Any]])
 
   final implicit class RepetitionSyntax[S<: Elem,A](t1: Tr[Env, State[S],State[S],A]) {
        def * : Tr[Env, State[S],State[S],Stream[A]] = self.many(t1)
@@ -19,27 +19,23 @@ trait TrailsPrimitives { self: Trails =>
     def as(name: String): Tr[Env,State[I],State[O],A] = self.label[I,O,A](t1,name)
   }
 
-  final implicit class AsNothingSyntax[O<: Elem,A](t1: Tr[Env,State[Nothing],State[O],A]) {
-    def as(name: String): Tr[Env,State[Nothing],State[O],A] = self.label[Nothing,O,A](t1,name)
-  }
-
   object Traverser {
-    def run[P <: Elem,A](tr: Tr[Env,State[Nothing],State[P],A], env: Env): Stream[(List[Elem],A)] =
-      tr(env)(State[Nothing](Nil,Set(), Map().withDefaultValue(Nil))).map { case (s,a) => (s.path.reverse, a) }
+    def run[P <: Elem,A](tr: Tr[Env,State[Elem],State[P],A], env: Env): Stream[(List[Elem],A)] =
+      tr(env)(State[Elem](Nil,Set(), Map().withDefaultValue(Nil))).map { case (s,a) => (s.path.reverse, a) }
   }
 
-  def V: Tr[Env,State[Nothing],State[Node],Node]
+  def V: Tr[Env,State[Elem],State[Node],Node]
 
-  def V(id: Id): Tr[Env,State[Nothing],State[Node],Node]
+  def V(id: Id): Tr[Env,State[Elem],State[Node],Node]
 
-  def V(p: Node => Boolean): Tr[Env,State[Nothing],State[Node],Node] =
+  def V(p: Node => Boolean): Tr[Env,State[Elem],State[Node],Node] =
     for { v <- V if p(v) } yield v
 
-  def E: Tr[Env,State[Nothing],State[Edge],Edge]
+  def E: Tr[Env,State[Elem],State[Edge],Edge]
 
-  def E(id: Id): Tr[Env,State[Nothing],State[Edge],Edge]
+  def E(id: Id): Tr[Env,State[Elem],State[Edge],Edge]
 
-  def E(p: Edge => Boolean): Tr[Env,State[Nothing],State[Edge],Edge] =
+  def E(p: Edge => Boolean): Tr[Env,State[Elem],State[Edge],Edge] =
     for { e <- E if p(e) } yield e
 
   def outE(edgeName: String): Tr[Env,State[Node],State[Edge],Edge]
@@ -104,14 +100,21 @@ trait TrailsPrimitives { self: Trails =>
 
   def label[I<: Elem,O<: Elem,A](tr: Tr[Env,State[I],State[O],A], name: String): Tr[Env,State[I],State[O],A] = {
     for {
-      (sl,a) <- slice(tr)
-      _      <- updateState((s: State[O]) => s.copy(labels = s.labels.updated(name, sl :: s.labels(name)) ))
+      a <- tr
+      _ <- updateState((s: State[O]) => s.copy(labels = s.labels.updated(name, a :: s.labels(name)) ))
     } yield a
   }
 
-  def label[S<: Elem,A](name: String): Tr[Env, State[S],State[S],List[List[Elem]]] =
+  def label[S<: Elem,A](name: String): Tr[Env, State[S],State[S],List[Any]] =
    getState.map(_.labels(name))
 
-  def sub[S<: Elem,I<: Elem,O<: Elem,A](tr: Tr[Env,State[I],State[O],A]): Tr[Env,State[S],State[S],A] =
-    e => s => tr(e)(State(Nil,Set(),Map())).map{ case (_, a) => (s, a) }
+//  def sub[I<:Elem,O<:Elem,A](tr: Tr[Env,State[I],State[O],A]): Tr[Env,State[I],State[I],A] =
+//    for {
+//      s <- getState[Env, State[I]]
+//      a <- tr
+//      _ <- setState[Env,State[O],State[I]](s)
+//    } yield a
+
+  def sub[I<:Elem,O<:Elem,A](tr: Tr[Env,State[I],State[O],A]): Tr[Env,State[I],State[I],Stream[A]] =
+    e => s => Stream((s, tr(e)(s).map(_._2)))
 }

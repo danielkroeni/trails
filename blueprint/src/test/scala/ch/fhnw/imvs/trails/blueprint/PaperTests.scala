@@ -47,14 +47,27 @@ class PaperTests extends FunSuite {
 
   test("unhappy lovers") {
     val unhappyLovers = for {
-      l <- V.as("lover") ~ out("loves") ~> out("loves")
-      uhl <- label("lover") ^^ (_.head) if !uhl.contains(l)
-    } yield uhl
+      beloved <- V.as("lvr") ~ out("loves") ~> out("loves")
+      lover <- label("lvr") if !lover.contains(beloved)
+    } yield lover
 
-    val answer = Traverser.run(unhappyLovers, alicesWorld)
+    val answer = Traverser.run(unhappyLovers , alicesWorld)
     assert(answer.size === 1)
     val (path, value) = answer.head
     assert(value.size === 1)
     assert(value.head === carol)
+  }
+
+  test("happy pet owner") {
+    val happyPetOwners = for {
+      petOwner <- V
+      pets  <- sub(out("pet")) if pets.nonEmpty
+      lover <- in("loves")
+    } yield (petOwner, lover)
+
+    val answer = Traverser.run(happyPetOwners, alicesWorld)
+    assert(answer.size === 2)
+    assert(answer.contains((List(bob, ab, alice), (bob,alice))))
+    assert(answer.contains((List(bob, cb, carol), (bob,carol))))
   }
 }

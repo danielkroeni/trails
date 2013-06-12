@@ -128,41 +128,6 @@ class BlueprintTrailsTest extends FunSuite {
     ))
   }
 
-  test("subquery") {
-    val graph = new TinkerGraph()
-    val v0 = graph.addVertex("v0")
-    v0.setProperty("a", 2)
-    v0.setProperty("b", 2)
-    val v1 = graph.addVertex("v1")
-    v1.setProperty("a", 3)
-    v1.setProperty("b", 2)
-
-    def hasT[T, I <: Elem, O <: Elem, S <: Elem](name: String, t: Tr[Env, State[I], State[O], T]): Tr[Env, State[S], State[S], T] =
-      for{
-        v <- sub[S,I,O,T](t)
-        a <- has(name, v)
-      } yield a
-
-    val expr = for {
-      _ <- V
-      n <- sub(V("v0") ^^ get[Int]("a"))
-      _ <- has("b", n)
-    } yield n
-
-    val expr1 = V ~> hasT("b", V("v0") ^^ get[Int]("a"))
-
-    val res0 = Traverser.run(expr, graph)
-    val res1 = Traverser.run(expr1, graph)
-
-    assert(res0.size === 2)
-    assert(res0.toSet === res1.toSet)
-
-    assert(res0.toSet === Set(
-      (List(v0), 2),
-      (List(v1), 2)
-    ))
-  }
-
   test("Cycles") {
     val graph = new TinkerGraph()
     val v0 = graph.addVertex("v0")

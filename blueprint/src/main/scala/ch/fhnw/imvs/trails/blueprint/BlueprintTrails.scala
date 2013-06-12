@@ -11,31 +11,31 @@ object BlueprintTrails extends TrailsPrimitives with Trails {
   type Node = blueprints.Vertex
   type Id = Any
 
-  def V: Tr[Env,State[Nothing],State[Node],Node] =
+  def V: Tr[Env,State[Elem],State[Node],Node] =
     for {
-      env <- getEnv[Env,State[Nothing]]
+      env <- getEnv[Env,State[Elem]]
       v   <- streamToTraverser(env.getVertices.toStream)
       _   <- extendPath(v)
     } yield v
 
-  def V(id: Id): Tr[Env,State[Nothing],State[Node],Node] =
+  def V(id: Id): Tr[Env,State[Elem],State[Node],Node] =
     for {
-      env <- getEnv[Env,State[Nothing]]
+      env <- getEnv[Env,State[Elem]]
       v = env.getVertex(id)
       _   <- extendPath(v)
     } yield v
 
-  def E: Tr[Env,State[Nothing],State[Edge],Edge] =
+  def E: Tr[Env,State[Elem],State[Edge],Edge] =
     for {
-      env <- getEnv[Env,State[Nothing]]
+      env <- getEnv[Env,State[Elem]]
       e   <- streamToTraverser(env.getEdges.toStream)
       _   <- extendPath(e)
     } yield e
 
 
-  def E(id: Id): Tr[Env,State[Nothing],State[Edge],Edge] =
+  def E(id: Id): Tr[Env,State[Elem],State[Edge],Edge] =
     for {
-      env <- getEnv[Env,State[Nothing]]
+      env <- getEnv[Env,State[Elem]]
       e   = env.getEdge(id)
       _   <- extendPath(e)
     } yield e
