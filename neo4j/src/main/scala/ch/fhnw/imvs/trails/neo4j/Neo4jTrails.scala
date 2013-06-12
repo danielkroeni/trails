@@ -2,73 +2,61 @@ package ch.fhnw.imvs.trails.neo4j
 
 import org.neo4j.graphdb.Direction._
 import org.neo4j.tooling.GlobalGraphOperations
-import ch.fhnw.imvs.trails.{TrailsPrimitives, Trails}
-import scala.collection.JavaConversions.iterableAsScalaIterable
+import scala.collection.JavaConversions._
+import ch.fhnw.imvs.trails._
 import org.neo4j.{graphdb => neo4j}
 
-object Neo4jTrails extends TrailsPrimitives with Trails {
+object Neo4jTrails extends TrailsPrimitives {
+  import Tr._
+
   type Env = neo4j.GraphDatabaseService
   type Elem = neo4j.PropertyContainer
   type Edge = neo4j.Relationship
   type Node = neo4j.Node
   type Id = Long
 
-  def V: Tr[Env,State[Elem],State[Node],Node] =
+
+  def V[M <: SchemaElement,N <: SchemaNode](sn: N): Tr[Env,State[M],State[N],Node] =
     for {
-      env <- getEnv[Env, State[Elem]]
+      env <- getEnv[Env, State[M]]
       nodes = GlobalGraphOperations.at(env).getAllNodes
       n <- streamToTraverser(nodes.toStream)
       _ <- extendPath(n)
     } yield n
 
-  def V(id: Id): Tr[Env,State[Elem],State[Node],Node] =
+  def outE[E <: SchemaEdge](se: E): Tr[Env,State[E#From],State[E],Edge] =
     for {
-      env  <- getEnv[Env, State[Elem]]
-      n = env.getNodeById(id)
-      _    <- extendPath(n)
-    } yield n
-
-  def E: Tr[Env,State[Elem],State[Edge],Edge] =
-    for {
-      env <- getEnv[Env, State[Elem]]
-      edges = GlobalGraphOperations.at(env).getAllRelationships
+      State((head: Node) :: rest, _, _) <- getState[Env,State[E#From]]
+      edges = head.getRelationships(neo4j.DynamicRelationshipType.withName(se.name), OUTGOING)
       e <- streamToTraverser(edges.toStream)
       _ <- extendPath(e)
     } yield e
 
-  def E(id: Id): Tr[Env,State[Elem],State[Edge],Edge] =
+  def inE[E <: SchemaEdge](se: E): Tr[Env,State[E#To],State[E],Edge] =
     for {
-      env  <- getEnv[Env, State[Elem]]
-      e = env.getRelationshipById(id)
-      _    <- extendPath(e)
-    } yield e
-
-  def outE(edgeName: String): Tr[Env,State[Node],State[Edge],Edge] =
-    ontoE(edgeName, OUTGOING)
-
-  def inE(edgeName: String): Tr[Env,State[Node],State[Edge],Edge] =
-    ontoE(edgeName, INCOMING)
-
-  private def ontoE(edgeName: String, dir: neo4j.Direction): Tr[Env,State[Node],State[Edge],Edge] =
-    for {
-      State((head: Node) :: rest, _, _) <- getState[Env,State[Node]]
-      edges = head.getRelationships(neo4j.DynamicRelationshipType.withName(edgeName), dir)
+      State((head: Node) :: rest, _, _) <- getState[Env,State[E#To]]
+      edges = head.getRelationships(neo4j.DynamicRelationshipType.withName(se.name), INCOMING)
       e <- streamToTraverser(edges.toStream)
       _ <- extendPath(e)
     } yield e
 
-  def outV: Tr[Env,State[Edge],State[Node],Node] =
-    ontoV(OUTGOING)
-
-  def inV: Tr[Env,State[Edge],State[Node],Node] =
-    ontoV(INCOMING)
-
-  private def ontoV(dir: neo4j.Direction): Tr[Env,State[Edge],State[Node],Node] =
+  def outV[E <: SchemaEdge]: Tr[Env,State[E],State[E#From],Node] =
     for {
-      State((head: Edge) :: rest, _, _) <- getState[Env,State[Edge]]
-      n = if(dir == OUTGOING) head.getStartNode else head.getEndNode
+      State((head: Edge) :: rest, _, _) <- getState[Env,State[E]]
+      n = head.getStartNode
       _ <- extendPath(n)
     } yield n
 
-  def get[A](name: String)(e: Elem): A = e.getProperty(name).asInstanceOf[A]
+  def inV[E <: SchemaEdge]: Tr[Env,State[E],State[E#To],Node] =
+    for {
+      State((head: Edge) :: rest, _, _) <- getState[Env,State[E]]
+      n = head.getEndNode
+      _ <- extendPath(n)
+    } yield n
+
+
+  def get[T, E <: SchemaElement](p: E#SchemaProperty[T]): Tr[Env,State[E],State[E],T] =
+    Tr(env => i => i match {
+      case State(path,_,_) => Stream((i,path.head.getProperty(p.name).asInstanceOf[T]))
+    })
 }

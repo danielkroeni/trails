@@ -1,70 +1,59 @@
 package ch.fhnw.imvs.trails.blueprint
 
 import scala.collection.JavaConversions._
-import ch.fhnw.imvs.trails.{TrailsPrimitives, Trails}
+import ch.fhnw.imvs.trails._
 import com.tinkerpop.blueprints
 
-object BlueprintTrails extends TrailsPrimitives with Trails {
+object BlueprintTrails extends TrailsPrimitives {
+  import Tr._
+
+  val BlueprintTypeTag = "_TYPE"
+
   type Env = blueprints.Graph
   type Elem = blueprints.Element
   type Edge = blueprints.Edge
   type Node = blueprints.Vertex
   type Id = Any
 
-  def V: Tr[Env,State[Elem],State[Node],Node] =
+  def V[M <: SchemaElement,N <: SchemaNode](sn: N): Tr[Env,State[M],State[N],Node] =
     for {
-      env <- getEnv[Env,State[Elem]]
-      v   <- streamToTraverser(env.getVertices.toStream)
-      _   <- extendPath(v)
+      env <- getEnv[Env,State[M]]
+      v   <- streamToTraverser[M,Node](env.getVertices.filter(v => v.getProperty[String](BlueprintTypeTag) == sn.name).toStream)
+      _   <- extendPath[M,N](v)
     } yield v
 
-  def V(id: Id): Tr[Env,State[Elem],State[Node],Node] =
+  def outE[E <: SchemaEdge](se: E): Tr[Env,State[E#From],State[E],Edge] =
     for {
-      env <- getEnv[Env,State[Elem]]
-      v = env.getVertex(id)
-      _   <- extendPath(v)
-    } yield v
-
-  def E: Tr[Env,State[Elem],State[Edge],Edge] =
-    for {
-      env <- getEnv[Env,State[Elem]]
-      e   <- streamToTraverser(env.getEdges.toStream)
-      _   <- extendPath(e)
-    } yield e
-
-
-  def E(id: Id): Tr[Env,State[Elem],State[Edge],Edge] =
-    for {
-      env <- getEnv[Env,State[Elem]]
-      e   = env.getEdge(id)
-      _   <- extendPath(e)
-    } yield e
-
-  def outE(edgeName: String): Tr[Env,State[Node],State[Edge],Edge] =
-    ontoE(edgeName, blueprints.Direction.OUT)
-
-  def inE(edgeName: String): Tr[Env,State[Node],State[Edge],Edge] =
-    ontoE(edgeName, blueprints.Direction.IN)
-
-  private def ontoE(edgeName: String, dir: blueprints.Direction): Tr[Env,State[Node],State[Edge],Edge] =
-    for {
-      State((head: Node) :: rest,_,_) <- getState[Env,State[Node]]
-      e <- streamToTraverser(head.getEdges(dir, edgeName).toStream)
+      State((head: Node) :: rest,_,_) <- getState[Env,State[E#From]]
+      e <- streamToTraverser(head.getEdges(blueprints.Direction.OUT, se.name).toStream)
       _ <- extendPath(e)
     } yield e
 
-  def outV: Tr[Env,State[Edge],State[Node],Node] =
-    ontoV(blueprints.Direction.OUT)
-
-  def inV: Tr[Env,State[Edge],State[Node],Node] =
-    ontoV(blueprints.Direction.IN)
-
-  private def ontoV(dir: blueprints.Direction): Tr[Env,State[Edge],State[Node],Node] =
+  def inE[E <: SchemaEdge](se: E): Tr[Env,State[E#To],State[E],Edge] =
     for {
-      State((head: Edge) :: rest,_,_) <- getState[Env,State[Edge]]
-      v = head.getVertex(dir)
+      State((head: Node) :: rest,_,_) <- getState[Env,State[E#To]]
+      e <- streamToTraverser(head.getEdges(blueprints.Direction.IN, se.name).toStream)
+      _ <- extendPath(e)
+    } yield e
+
+  def outV[E <: SchemaEdge]: Tr[Env,State[E],State[E#From],Node] =
+    for {
+      State((head: Edge) :: rest,_,_) <- getState[Env,State[E]]
+      v = head.getVertex(blueprints.Direction.OUT)
       _ <- extendPath(v)
     } yield v
 
-  def get[T](name: String)(e: Elem): T = e.getProperty[T](name)
+  def inV[E <: SchemaEdge]: Tr[Env,State[E],State[E#To],Node] =
+    for {
+      State((head: Edge) :: rest,_,_) <- getState[Env,State[E]]
+      v = head.getVertex(blueprints.Direction.IN)
+      _ <- extendPath(v)
+    } yield v
+
+
+  def get[T, E <: SchemaElement](p: E#SchemaProperty[T]): Tr[Env,State[E],State[E],T] =
+    Tr(env => i => i match {
+      case State(path,_,_) => Stream((i,path.head.getProperty[T](p.name)))
+    })
+
 }

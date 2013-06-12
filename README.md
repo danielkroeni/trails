@@ -1,4 +1,4 @@
-trails extended [![Build Status](https://secure.travis-ci.org/danielkroeni/trails.png?branch=extended)](http://travis-ci.org/danielkroeni/trails)
+WIP: trails schema
 ======
 
 Purely functional graph traversal combinators written in Scala.
