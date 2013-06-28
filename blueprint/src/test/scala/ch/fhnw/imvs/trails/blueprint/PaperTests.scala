@@ -5,7 +5,7 @@ import com.tinkerpop.blueprints.impls.tg.TinkerGraph
 import BlueprintTrails._
 
 /*
-test-only ch.fhnw.imvs.trails.neo4j.PaperTests
+test-only ch.fhnw.imvs.trails.blueprint.PaperTests
 */
 class PaperTests extends FunSuite {
 
