@@ -95,6 +95,16 @@ trait Trails { self =>
     */
   final def opt[E,S,A](tr: Tr[E,S,S,A]): Tr[E,S,S,Option[A]] =
     choice(success(None), map(tr)(Some(_)))
+
+//    def sub[E,I,O,A](tr: Tr[E,I,O,A]): Tr[E,I,I,A] =
+//      for {
+//        s <- getState[E, I]
+//        a <- tr
+//        _ <- setState[E,O,I](s)
+//      } yield a
+
+  def sub[E,I,O,A](tr: Tr[E,I,O,A]): Tr[E,I,I,Stream[A]] =
+    e => i => Stream((i, tr(e)(i).map(_._2)))
 }
 
 

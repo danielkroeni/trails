@@ -107,14 +107,4 @@ trait TrailsPrimitives { self: Trails =>
 
   def label[S<: Elem,A](name: String): Tr[Env, State[S],State[S],List[Any]] =
    getState.map(_.labels(name))
-
-//  def sub[I<:Elem,O<:Elem,A](tr: Tr[Env,State[I],State[O],A]): Tr[Env,State[I],State[I],A] =
-//    for {
-//      s <- getState[Env, State[I]]
-//      a <- tr
-//      _ <- setState[Env,State[O],State[I]](s)
-//    } yield a
-
-  def sub[I<:Elem,O<:Elem,A](tr: Tr[Env,State[I],State[O],A]): Tr[Env,State[I],State[I],Stream[A]] =
-    e => s => Stream((s, tr(e)(s).map(_._2)))
 }
