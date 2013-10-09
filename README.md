@@ -13,6 +13,8 @@ The following combinators are supported:
     t.+         // Repetition 1..n
 ```
 
+Find a more comprehensive description in our [paper](https://dl.acm.org/authorize?6839137). [Slides](ScalaDays2013_Presentation.pdf) from the talk are available as well.
+
 ## Features
 
 * Purely functional: No mutable state, no surprises.
