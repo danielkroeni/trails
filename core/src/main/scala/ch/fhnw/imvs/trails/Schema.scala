@@ -12,7 +12,6 @@ trait SchemaElement { elem =>
   }
 
   lazy val name: String = simpleName(getClass)
-  def dbName: String = name
 
   def properties: Seq[SchemaProperty[_]]
 }
@@ -23,7 +22,7 @@ abstract case class SchemaNode(val desc: String = "") extends SchemaElement {
   def idProperties: Seq[Identity]
 }
 
-abstract case class SchemaEdge(val isId: Boolean = false, val desc: String = "") extends SchemaElement with Identity {
+abstract case class SchemaEdge(val desc: String = "") extends SchemaElement with Identity {
   type From <: SchemaNode
   type To <: SchemaNode
   def from: From

@@ -36,7 +36,7 @@ final class Tr[E,I,O,+A](tr: E => I => Stream[(O,A)]) extends (E => I => Stream[
     flatMap[O,A]((a: A) => if(p(a)) success(a) else fail)
 
   def ~[P,B](t2: Tr[E,O,P,B]): Tr[E,I,P,A~B] = seq(t2)
-  def |[B,O2](t2: => Tr[E,I,O2,B])(implicit ev: O =:!= O2):  Tr[E,I,O|O2,A|B] = choice(t2)
+  def |[B,O2](t2: => Tr[E,I,O2,B])(implicit ev: O =:!= O2): Tr[E,I,O|O2,A|B] = choice(t2)
   def |[B](t2: => Tr[E,I,O,B]):  Tr[E,I,O,A|B] = simplifyState[E,I,O,A|B](choice(t2))
   def ~>[P,B](t2: Tr[E,O,P,B]): Tr[E,I,P,B] = seq(t2).map{ case a ~ b => b }
   def <~[P,B](t2: Tr[E,O,P,B]): Tr[E,I,P,A] = seq(t2).map{ case a ~ b => a }
@@ -73,8 +73,10 @@ object Tr {
   def updateState[E,I,O](f: I => O): Tr[E,I,O,Unit] =
     getState[E,I]flatMap(i => setState(f(i)))
 
+  def sub[E,I,O,A](tr: Tr[E,I,O,A]): Tr[E,I,I,Stream[A]] =
+    Tr(e => i => Stream((i, tr(e)(i).map(_._2))))
 
-  def simplifyState[E,I,O,A](tr: Tr[E,I,O|O,A]): Tr[E,I,O,A] =
+   implicit def simplifyState[E,I,O,A](tr: Tr[E,I,O|O,A]): Tr[E,I,O,A] =
     Tr(e => i => tr(e)(i).map {
       case (<|(o), a) => (o,a)
       case (|>(o), a) => (o,a)

@@ -3,7 +3,9 @@ package ch.fhnw.imvs.trails.blueprint
 import org.scalatest.FunSuite
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph
 import BlueprintTrails._
-import ch.fhnw.imvs.trails.{Tr, SchemaEdge, SchemaNode, Schema}
+import ch.fhnw.imvs.trails.{SchemaEdge, SchemaNode, Schema}
+import ch.fhnw.imvs.trails.Tr.sub
+import BlueprintTestUtil._
 
 /*
 test-only ch.fhnw.imvs.trails.neo4j.PaperTests
@@ -50,33 +52,25 @@ class PaperTests extends FunSuite {
 
   import AliceSchema._
 
-
-
-  val alice = alicesWorld.addVertex("Alice"); alice.setProperty(Person.Name.name, "Alice"); alice.setProperty(BlueprintTypeTag, Person.name)
-  val bob = alicesWorld.addVertex("Bob"); bob.setProperty(Person.Name.name, "Bob"); bob.setProperty(BlueprintTypeTag, Person.name)
-  val carol = alicesWorld.addVertex("Carol"); carol.setProperty(Person.Name.name, "Carol"); carol.setProperty(BlueprintTypeTag, Person.name)
-  val dave = alicesWorld.addVertex("Dave"); dave.setProperty(Person.Name.name, "Dave"); dave.setProperty(BlueprintTypeTag, Person.name)
-  val murphy = alicesWorld.addVertex("Murphy"); murphy.setProperty(Pet.Name.name, "Murphy"); murphy.setProperty(BlueprintTypeTag, Pet.name)
-  val fluffy = alicesWorld.addVertex("Fluffy"); fluffy.setProperty(Pet.Name.name, "Fluffy"); fluffy.setProperty(BlueprintTypeTag, Pet.name)
-  val ab = alice.addEdge(Loves.name, bob)
-  val ac = alice.addEdge(Likes.name, carol)
-  val ba = bob.addEdge(Loves.name, alice)
-  val bm = bob.addEdge(Owns.name, murphy)
-  val cb = carol.addEdge(Loves.name, bob)
-  val cd = carol.addEdge(Likes.name, dave)
-  val df = dave.addEdge(Owns.name, fluffy)
+  val alice = createNode(alicesWorld, Person, Person.Name, "Alice")
+  val bob = createNode(alicesWorld, Person, Person.Name, "Bob")
+  val carol = createNode(alicesWorld, Person, Person.Name, "Carol")
+  val dave = createNode(alicesWorld, Person, Person.Name, "Dave")
+  val murphy = createNode(alicesWorld, Person, Person.Name, "Murphy")
+  val fluffy = createNode(alicesWorld, Person, Person.Name, "Fluffy")
+  val ab = createEdge(Loves, alice, bob)
+  val ac = createEdge(Likes, alice, carol)
+  val ba = createEdge(Loves, bob, alice)
+  val bm = createEdge(Owns, bob, murphy)
+  val cb = createEdge(Loves, carol, bob)
+  val cd = createEdge(Likes, carol, dave)
+  val df = createEdge(Owns, dave, fluffy)
 
 
   test("Pet names of friends of friends") {
-
-    val friends: Tr[Env,State[Nothing],State[Person.type],Stream[Person.type]] = V(Person) ~ get(Person.Name).filter(_ == "Alice") ~> (out(Loves) | out(Likes)).+
-    val petNames = friends ~> out(Owns) ~ get(Pet.Name)
-    val answer = friends(alicesWorld)(State(List(), Set(), Map()))
-
-
-
-    println(answer.map(_._2))
-
+    val friends = V(Person) ~ get(Person.Name).filter(_ == "Carol") ~> (out(Loves) | out(Likes)).+
+    val petNames = friends ~> out(Owns) ~> get(Pet.Name)
+    val answer = Traverser.run(petNames, alicesWorld)
 
     assert(answer.size === 4)
 
@@ -88,29 +82,30 @@ class PaperTests extends FunSuite {
     ))
   }
 
-//  test("unhappy lovers") {
-//    val unhappyLovers = for {
-//      beloved <- V.as("lvr") ~ out("loves") ~> out("loves")
-//      lover <- label("lvr") if !lover.contains(beloved)
-//    } yield lover
-//
-//    val answer = Traverser.run(unhappyLovers , alicesWorld)
-//    assert(answer.size === 1)
-//    val (path, value) = answer.head
-//    assert(value.size === 1)
-//    assert(value.head === carol)
-//  }
-//
-//  test("happy pet owner") {
-//    val happyPetOwners = for {
-//      petOwner <- V
-//      pets  <- sub(out("pet")) if pets.nonEmpty
-//      lover <- in("loves")
-//    } yield (petOwner, lover)
-//
-//    val answer = Traverser.run(happyPetOwners, alicesWorld)
-//    assert(answer.size === 2)
-//    assert(answer.contains((List(bob, ab, alice), (bob,alice))))
-//    assert(answer.contains((List(bob, cb, carol), (bob,carol))))
-//  }
+  test("unhappy lovers") {
+    val unhappyLovers = for {
+      beloved <- V(Person).as("lvr") ~ out(Loves) ~> out(Loves)
+      lover <- label("lvr") if !lover.contains(beloved)
+    } yield lover
+
+    val answer = Traverser.run(unhappyLovers , alicesWorld)
+
+    assert(answer.size === 1)
+    val (path, value) = answer.head
+    assert(value.size === 1)
+    assert(value.head === carol)
+  }
+
+  test("happy pet owner") {
+    val happyPetOwners = for {
+      petOwner <- V(Person)
+      pets  <- sub(out(Owns)) if pets.nonEmpty
+      lover <- in(Loves)
+    } yield (petOwner, lover)
+
+    val answer = Traverser.run(happyPetOwners, alicesWorld)
+    assert(answer.size === 2)
+    assert(answer.contains((List(bob, ab, alice), (bob,alice))))
+    assert(answer.contains((List(bob, cb, carol), (bob,carol))))
+  }
 }

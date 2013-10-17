@@ -1,4 +1,4 @@
-WIP: trails schema
+trails schema [![Build Status](https://secure.travis-ci.org/danielkroeni/trails.png?branch=schema)](http://travis-ci.org/danielkroeni/trails)
 ======
 
 Purely functional graph traversal combinators written in Scala.
@@ -13,6 +13,8 @@ The following combinators are supported:
     t.+         // Repetition 1..n
 ```
 
+Find a more comprehensive description in our [paper](https://dl.acm.org/authorize?6839137). [Slides](ScalaDays2013_Presentation.pdf) from the talk are available as well.
+
 ## Features
 
 * Purely functional: No mutable state, no surprises.
@@ -20,6 +22,7 @@ The following combinators are supported:
 * Cycle aware: Avoid spinning in a circle.
 * Labeling: Name path snippets.
 * Supports different graph APIs ([blueprints](https://github.com/tinkerpop/blueprints/wiki) and [neo4j](http://www.neo4j.org/) are already included)
+* Schema aware: Guided graph traversals.
 
 ## Examples
 ```scala
