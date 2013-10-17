@@ -26,42 +26,64 @@ Find a more comprehensive description in our [paper](https://dl.acm.org/authoriz
 
 ## Examples
 ```scala
-  test("Example") {
-    val graph = new TinkerGraph()
-    val v0 = graph.addVertex("v0")
-    val v1 = graph.addVertex("v1")
-    val v2 = graph.addVertex("v2")
+  object AliceSchema extends Schema {
+    object Person extends SchemaNode {
+      object Name extends SchemaProperty[String]
+      def properties = Seq(Name)
+    }
 
-    val e0 = graph.addEdge("e0", v0, v1, "e")
-    val e1 = graph.addEdge("e1", v0, v2, "f")
+    object Pet extends SchemaNode {
+      object Name extends SchemaProperty[String]
+      def properties = Seq(Name)
+    }
 
-    val t = V("v0") ~ (outE("e")|outE("f")) ~ inV
-    val res = Traverser.run(t, graph)
+    object Loves extends SchemaEdge {
+      type From = Person.type; type To = Person.type
+    }
 
-    assert(res.size === 2)
-    val (List(`v0`, `e0`, `v1`), `v0` ~ `e0` ~ `v1`) = res.head
-    val (List(`v0`, `e1`, `v2`), `v0` ~ `e1` ~ `v2`) = res.tail.head
+    object Likes extends SchemaEdge {
+      type From = Person.type; type To = Person.type
+    }
+
+    object Owns extends SchemaEdge {
+      type From = Person.type; type To = Pet.type
+    }
+
+    def nodes = Seq(Pet, Person)
+    def edges = Seq(Loves, Likes, Owns)
   }
 
-  test("Cycles") {
-    val graph = new TinkerGraph()
-    val v0 = graph.addVertex("v0")
+  val alicesWorld = /* Create an instance of your favorite graph database implementation */
 
-    val e0 = graph.addEdge("e0", v0, v0, "e")
-    val f0 = graph.addEdge("f0", v0, v0, "f")
-    val f1 = graph.addEdge("f1", v0, v0, "f")
+  import AliceSchema._
 
-    val expr0 = V("v0") ~ (out("e").+ ~ out("f")).+
+  val alice = createNode(alicesWorld, Person, Person.Name, "Alice")
+  val bob = createNode(alicesWorld, Person, Person.Name, "Bob")
+  val carol = createNode(alicesWorld, Person, Person.Name, "Carol")
+  val dave = createNode(alicesWorld, Person, Person.Name, "Dave")
+  val murphy = createNode(alicesWorld, Person, Person.Name, "Murphy")
+  val fluffy = createNode(alicesWorld, Person, Person.Name, "Fluffy")
+  val ab = createEdge(Loves, alice, bob)
+  val ac = createEdge(Likes, alice, carol)
+  val ba = createEdge(Loves, bob, alice)
+  val bm = createEdge(Owns, bob, murphy)
+  val cb = createEdge(Loves, carol, bob)
+  val cd = createEdge(Likes, carol, dave)
+  val df = createEdge(Owns, dave, fluffy)
 
-    val paths = Traverser.run(expr0, graph).map(_._1)
 
-    assert(paths.size === 4)
+  test("Pet names of friends of friends") {
+    val friends = V(Person) ~ get(Person.Name).filter(_ == "Carol") ~> (out(Loves) | out(Likes)).+
+    val petNames = friends ~> out(Owns) ~> get(Pet.Name)
+    val answer = Traverser.run(petNames, alicesWorld)
 
-    assert(paths.toSet === Set(
-      List(v0, e0, v0, f1, v0),
-      List(v0, e0, v0, f1, v0, e0, v0, f0, v0),
-      List(v0, e0, v0, f0, v0),
-      List(v0, e0, v0, f0, v0, e0, v0, f1, v0)
+    assert(answer.size === 4)
+
+    assert(answer.toSet === Set(
+      (List(carol, cd, dave, df, fluffy), "Fluffy"),
+      (List(carol, cb, bob, bm, murphy), "Murphy"),
+      (List(carol, cb, bob, ba, alice, ac, carol, cd, dave, df, fluffy), "Fluffy"),
+      (List(carol, cb, bob, ba, alice, ab, bob, bm, murphy), "Murphy")
     ))
   }
 ```

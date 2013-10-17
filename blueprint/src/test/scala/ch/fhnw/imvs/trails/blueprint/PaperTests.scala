@@ -12,40 +12,31 @@ test-only ch.fhnw.imvs.trails.neo4j.PaperTests
 */
 class PaperTests extends FunSuite {
 
-  object AliceSchema extends Schema("Structural description of Alice's World") {
+  object AliceSchema extends Schema {
     object Person extends SchemaNode {
       object Name extends SchemaProperty[String]
       def properties = Seq(Name)
-      def idProperties = Seq(Name)
     }
 
     object Pet extends SchemaNode {
       object Name extends SchemaProperty[String]
       def properties = Seq(Name)
-      def idProperties = Seq(Name)
     }
 
     object Loves extends SchemaEdge {
       type From = Person.type; type To = Person.type
-      def from = Person; def to = Person
-      def properties = Seq()
     }
 
     object Likes extends SchemaEdge {
       type From = Person.type; type To = Person.type
-      def from = Person; def to = Person
-      def properties = Seq()
     }
 
     object Owns extends SchemaEdge {
       type From = Person.type; type To = Pet.type
-      def from = Person; def to = Pet
-      def properties = Seq()
     }
 
     def nodes = Seq(Pet, Person)
     def edges = Seq(Loves, Likes, Owns)
-
   }
 
   val alicesWorld = new TinkerGraph()

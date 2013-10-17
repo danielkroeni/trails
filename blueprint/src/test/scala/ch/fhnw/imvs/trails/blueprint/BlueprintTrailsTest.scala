@@ -9,39 +9,7 @@ import BlueprintTestUtil._
 
 class BlueprintTrailsTest extends FunSuite {
 
-  object TestSchema extends Schema("TBD") {
-    object Node extends SchemaNode {
-      object Name extends SchemaProperty[String]
-      object Nr extends SchemaProperty[Int]
-
-      def properties = Seq(Name,Nr)
-      def idProperties = Seq(Name)
-    }
-
-    object E extends SchemaEdge {
-      type From = Node.type; type To = Node.type
-      def from = Node; def to = Node
-      def properties = Seq()
-    }
-
-    object F extends SchemaEdge {
-      type From = Node.type; type To = Node.type
-      def from = Node; def to = Node
-      def properties = Seq()
-    }
-
-    object G extends SchemaEdge {
-      type From = Node.type; type To = Node.type
-      def from = Node; def to = Node
-      def properties = Seq()
-    }
-
-    def nodes = Seq(Node)
-    def edges = Seq(E,F,G)
-  }
-
   import TestSchema._
-
 
   test("seq") {
     val graph = new TinkerGraph()

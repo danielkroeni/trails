@@ -1,39 +1,26 @@
 package ch.fhnw.imvs.trails
 
-import scala.reflect.ClassTag
-
 trait SchemaElement { elem =>
   private def simpleName(c: Class[_]): String = c.getName.split("\\$").last
 
-  case class SchemaProperty[T: ClassTag](desc: String = "") extends Identity {
-    val parent: SchemaElement = elem
-    private lazy val className = simpleName(getClass)
-    def name: String = className
+  class SchemaProperty[T] {
+    lazy val name: String = simpleName(getClass)
   }
 
   lazy val name: String = simpleName(getClass)
-
   def properties: Seq[SchemaProperty[_]]
 }
 
-abstract case class SchemaNode(val desc: String = "") extends SchemaElement {
-  override def toString(): String = s"(Node $name)"
+abstract class SchemaNode extends SchemaElement
 
-  def idProperties: Seq[Identity]
-}
-
-abstract case class SchemaEdge(val desc: String = "") extends SchemaElement with Identity {
+abstract class SchemaEdge extends SchemaElement {
   type From <: SchemaNode
   type To <: SchemaNode
-  def from: From
-  def to: To
-
-  override def toString(): String =  s"(Edge $name[${from.name}->${to.name}])"
+  def properties = Seq()
 }
 
-trait Identity
 
-abstract case class Schema(desc: String = "") {
+abstract class Schema {
   def nodes: Seq[SchemaNode]
   def edges: Seq[SchemaEdge]
 

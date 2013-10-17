@@ -15,11 +15,13 @@ object Neo4jTrails extends TrailsPrimitives {
   type Node = neo4j.Node
   type Id = Long
 
+  val Neo4jTypeTag: String = "'TYPE"
 
   def V[M <: SchemaElement,N <: SchemaNode](sn: N): Tr[Env,State[M],State[N],Node] =
     for {
       env <- getEnv[Env, State[M]]
-      nodes = GlobalGraphOperations.at(env).getAllNodes
+      allNodes = GlobalGraphOperations.at(env).getAllNodes
+      nodes = allNodes.filter(v => v.hasProperty(Neo4jTypeTag) && v.getProperty(Neo4jTypeTag) == sn.name)
       n <- streamToTraverser(nodes.toStream)
       _ <- extendPath(n)
     } yield n

@@ -7,13 +7,13 @@ import com.tinkerpop.blueprints
 object BlueprintTrails extends TrailsPrimitives {
   import Tr._
 
-  val BlueprintTypeTag = "_TYPE"
-
   type Env = blueprints.Graph
   type Elem = blueprints.Element
   type Edge = blueprints.Edge
   type Node = blueprints.Vertex
   type Id = Any
+
+  val BlueprintTypeTag = "_TYPE"
 
   def V[M <: SchemaElement,N <: SchemaNode](sn: N): Tr[Env,State[M],State[N],Node] =
     for {
